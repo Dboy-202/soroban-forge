@@ -1,15 +1,16 @@
 //! Soroban Forge developer CLI.
-//!
-//! ```text
-//! soroban-forge build
-//! soroban-forge build --wasm --check-size
-//! soroban-forge test --package soroban-forge-escrow
-//! soroban-forge lint --fix
-//! soroban-forge deploy path/to/escrow.wasm --network testnet
-//! soroban-forge verify --wasm path/to/contract.wasm
-//! soroban-forge verify --expected <sha256>
-//! soroban-forge verify --manifest provenance-manifest.json
-//! ```
+///
+/// ```text
+/// soroban-forge build
+/// soroban-forge build --wasm --check-size
+/// soroban-forge test --package soroban-forge-escrow
+/// soroban-forge lint --fix
+/// soroban-forge deploy path/to/escrow.wasm --network testnet
+/// soroban-forge deploy --manifest deployment.toml
+/// soroban-forge verify --wasm path/to/contract.wasm
+/// soroban-forge verify --expected <sha256>
+/// soroban-forge verify --manifest provenance-manifest.json
+/// ```
 
 mod cli;
 mod commands;
@@ -56,7 +57,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Events(args) => commands::events::run(args)?,
     }
 
-    Ok(())
+    Ok(()
 }
 
 #[cfg(test)]
@@ -138,6 +139,33 @@ mod tests {
             .to_string();
         assert!(help.contains("--wasm"));
         assert!(help.contains("--expected"));
+        assert!(help.contains("--manifest"));
+    }
+
+    #[test]
+    fn deploy_manifest_flag_parses() {
+        let cli = Cli::try_parse_from([
+            "soroban-forge",
+            "deploy",
+            "--manifest",
+            "deployment.toml",
+        ])
+        .unwrap();
+
+        let Commands::Deploy(args) = cli.command else {
+            panic!("expected deploy command");
+        };
+        assert_eq!(args.manifest.as_deref(), Some("deployment.toml"));
+    }
+
+    #[test]
+    fn deploy_help_documents_manifest() {
+        let mut command = Cli::command();
+        let help = command
+            .find_subcommand_mut("deploy")
+            .expect("deploy subcommand must exist")
+            .render_long_help()
+            .to_string();
         assert!(help.contains("--manifest"));
     }
 }
